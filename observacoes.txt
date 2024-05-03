@@ -1,0 +1,15 @@
+pip3 install -r requirements.txt -> realiza  a instalação de todos os pacotes do arquivo
+
+#### Documentação 
+  - https://flask-sqlalchemy.palletsprojects.com/en/3.1.x/
+
+#### Criar banco - Comandos
+  - flask Shell -> abrir terminal shel flask
+  - db.create_all() - criar o banco de dados
+  - db.session() - iniciar sessão
+  - db.session.commit() - aplicar alterações 
+  - exit() - sair do terminal flask shell
+
+
+#### Extenções 
+  - SQLite Viewer -> visualizar banco de dados pelo vscode
