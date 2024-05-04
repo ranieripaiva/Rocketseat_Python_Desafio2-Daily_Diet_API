@@ -1,17 +1,19 @@
-class Dieta:
-  def __init__(self, id, title, description, dt_dieta, dieta=False) -> None:
-    self.id = id
-    self.title = title
-    self.description = description
-    self.dt_dieta = dt_dieta
-    self.dieta = dieta
+from database import db
+from flask_login import UserMixin
 
-  def to_dict(self):
-    return {
-      "id": self.id,
-      "title": self.title,      
-      "description": self.description,
-      "data": self.dt_dieta,
-      "dieta": self.dieta      
-    }
+class Dieta(db.Model, UserMixin):
+  id = db.Column(db.Integer, primary_key=True)
+  title = db.Column(db.String(80), nullable=False)
+  description = db.Column(db.String(80), nullable=False)
+  dt_dieta = db.Column(db.DateTime)
+  dieta = db.Column(db.Boolean, default=False)
+
+  def serialize(self):
+        return {
+            'title': self.title,
+            'description': self.description,
+            'data': self.dt_dieta
+        }
+  def __repr__(self):
+        return '<Dieta %r>' % self.title
 

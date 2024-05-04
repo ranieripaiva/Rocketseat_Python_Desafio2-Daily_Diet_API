@@ -1,3 +1,4 @@
+from datetime import datetime
 from flask import Flask, request, jsonify
 from database import db
 from models.user import User
@@ -7,20 +8,17 @@ from flask_login import LoginManager, login_user, current_user, logout_user, log
 app = Flask(__name__)
 app.config['SECRET_KEY'] = "your_secret_key"
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql:///root:admin123@127.0.0.1:3306/flask-crud'
 
 login_manager = LoginManager()
 db.init_app(app)
 login_manager.init_app(app)
 login_manager.login_view = "login"
 
-dietas = []
-dieta_id_control = 1
-
 @login_manager.user_loader
 def load_user(user_id):
   return User.query.get(user_id)
 
+# Autenticação do User
 @app.route('/login', methods=['POST'])
 def login():
   data = request.json
@@ -38,12 +36,14 @@ def login():
   
   return jsonify({"message": "Credenciais inválidas"}), 400
 
+# Logout na API com usuário logado
 @app.route('/logout', methods=['GET'])
 @login_required
 def logout():
   logout_user()
   return jsonify({"message": "Logout realizado com sucesso!"})
 
+# Criar novo usuário no banco
 @app.route('/user', methods=["POST"])
 def create_user():
   data = request.json
@@ -58,6 +58,7 @@ def create_user():
 
   return jsonify({"message": "Dados invalidos"}), 400
 
+# Listar usuário especifico cadastrado no banco de dados
 @app.route('/user/<int:id_user>', methods=["GET"])
 @login_required
 def read_user(id_user):
@@ -68,6 +69,7 @@ def read_user(id_user):
 
   return jsonify({"message": "Usuario não encontrado"}), 404
 
+# Atualizar usuário cadastrado no banco de dados
 @app.route('/user/<int:id_user>', methods=["PUT"])
 @login_required
 def update_user(id_user):
@@ -82,6 +84,7 @@ def update_user(id_user):
 
   return jsonify({"message": "Usuario não encontrado"}), 404
 
+# Excluir usuário cadastrado no banco de dados
 @app.route('/user/<int:id_user>', methods=["DELETE"])
 @login_required
 def delete_user(id_user):
@@ -99,33 +102,57 @@ def delete_user(id_user):
 
 
 @app.route('/dietas', methods=['POST'])
+@login_required
 def creat_dieta():
-  global dieta_id_control
-  data = request.get_json()
-  new_dieta = Dieta(id=dieta_id_control, title=data['title'], description=data.get('description',''), dt_dieta=data['dt_dieta'])
-  dieta_id_control += 1
-  dietas.append(new_dieta)
-  print(dietas)
-  return jsonify({"message":"Nova dieta criada com sucesso", "id": new_dieta.id})
+  data = request.json
+  title = data.get("title")
+  description = data.get("description")
+  dt_dieta = datetime.strptime(str(data.get("dt_dieta")), '%Y-%m-%d %H:%M:%S')
+   
+  if title and description and dt_dieta:
+    dieta = Dieta(title=title, description=description, dt_dieta=dt_dieta)  
+    db.session.add(dieta)
+    db.session.commit()    
+    return jsonify({"message": "Dieta cadastrada com sucesso"})
+  
+  return jsonify({"message": "Dados invalidos"}), 400
+
 
 @app.route('/dietas', methods=['GET'])
 def get_dietas():
-  dieta_list = [dieta.to_dict() for dieta in dietas]
+  dietas = Dieta.query.all()
+  return jsonify([dieta.serialize() for dieta in dietas])
 
-  output = {
-    "Dietas": dieta_list,
-    "total_dietas": len(dieta_list)
-  }
-  return jsonify(output)
+# obter dieta especifica
+@app.route('/dietas/<int:id_dieta>', methods=['GET'])
+def get_dieta(id_dieta):
+  dieta = Dieta.query.get(id_dieta)
+  
+  if dieta:
+    return {"Title": dieta.title, "Description": dieta.description, "Data": dieta.dt_dieta }
+  
+  return jsonify({"message": "Dieta não encontrada"}), 404
+
+# Atualização da dieta
+@app.route('/dietas/<int:id_dieta>', methods=["PUT"])
+@login_required
+def update_dieta(id_dieta):
+  data = request.json
+  dieta = Dieta.query.get(id_dieta)
+
+  if dieta:
+    dieta.title = data.get("title")
+    dieta.description = data.get("description")
+    dieta.dt_dieta = datetime.strptime(str(data.get("data")), '%Y-%m-%d %H:%M:%S')
+    dieta.dieta = data.get("dieta")
+    db.session.commit()
+
+    return jsonify({"message": f"Dieta {id_dieta} atualizado com sucesso"})
+
+  return jsonify({"message": "Dieta não encontrado"}), 404
 
 
-@app.route('/dietas/<int:id>', methods=['GET'])
-def get_dieta(id):
-  for d in dietas:
-    if d.id == id:
-      return jsonify(d.to_dict())
-
-  return jsonify({"message": "Não foi possível encontrar a dieta"}), 404
+'''
 
 @app.route('/dietas/<int:id>', methods=["PUT"])
 def update_dieta(id):
@@ -156,6 +183,7 @@ def delete_dieta(id):
 
   dietas.remove(dieta)
   return jsonify({"message": "Dieta deletada com sucesso"})
-
+'''
+  
 if __name__ == "__main__":
   app.run(debug=True)
