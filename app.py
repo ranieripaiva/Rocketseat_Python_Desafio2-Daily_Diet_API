@@ -151,39 +151,17 @@ def update_dieta(id_dieta):
 
   return jsonify({"message": "Dieta não encontrado"}), 404
 
+# Deletar uma dieta especifica
+@app.route('/dietas/<int:id_dieta>', methods=['DELETE'])
+def delete_dieta(id_dieta):
+  dieta = Dieta.query.get(id_dieta)
+  if dieta:
+    db.session.delete(dieta)
+    db.session.commit()
+    return jsonify({"message": f"Dieta {id_dieta} deletado com sucesso"})
 
-'''
+  return jsonify({"message": "Dieta não encontrado"}), 404
 
-@app.route('/dietas/<int:id>', methods=["PUT"])
-def update_dieta(id):
-  dieta = None
-  for d in dietas:
-    if d.id == id:
-      dieta = d
-  if dieta == None:
-    return jsonify({"message": "Não foi possível encontrar a dieta"}), 404
-
-  data = request.get_json()
-  dieta.title = data['title']
-  dieta.description = data['description']
-  dieta.dieta = data['dieta']
-  return jsonify({"message": "Dieta atualizada com sucesso"})
-
-
-@app.route('/dietas/<int:id>', methods=['DELETE'])
-def delete_dieta(id):
-  dieta = None
-  for d in dietas:
-    if d.id == id:
-      dieta = d
-      break
-    
-  if not dieta:
-    return jsonify({"message": "Não foi possível encontrar a dieta"}), 404
-
-  dietas.remove(dieta)
-  return jsonify({"message": "Dieta deletada com sucesso"})
-'''
   
 if __name__ == "__main__":
   app.run(debug=True)
